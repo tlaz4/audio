@@ -5,55 +5,31 @@
 
 long getFileLen(FILE *file);
 int unpackSizeTag(char *buffer);
+long extractMp3(FILE *formatFile, FILE *file);
+void streamMedia(FILE *formatFile, long fileLen);
 
-int main(){
+/*
+	run as ./mp3Decode | mpg123 -
+*/
+
+int main(int argc, char* argv[]){
 
 	FILE *file;
 	FILE *formatFile;
-	char *buffer;
-	char *sentBuffer;
-	char c;
 	long fileLen;
-	int tagSize, i;
 
-	file = fopen("Suspense_420819_010_The_Cave_of_Ali_Baba_-128-44-_27789_29m33s.mp3", "rb");
+	file = fopen(argv[1], "rb");
 	formatFile = fopen("formattedMp3.mp3", "wb");
-	fileLen = getFileLen(file);
 
-	buffer = (char *)malloc(fileLen * sizeof(char));
-	fread(buffer, fileLen, 1, file);
-	fclose(file);
+	fileLen = extractMp3(formatFile, file);
 
-	if(buffer[0] == 'I' && buffer[1] == 'D'){
-		tagSize = unpackSizeTag(buffer);
-		printf("tag size: %d\n", tagSize); 
-		memmove(buffer, buffer + tagSize, fileLen - tagSize);
-		for(int i = 0; i < 40; i++){
-			printf("%c", buffer[i]);
-		}	
-		fwrite(buffer, 1, fileLen - tagSize, formatFile);
-	}
+	formatFile = fopen("formattedMp3.mp3", "rb");
+	streamMedia(formatFile, fileLen);
 
-	sentBuffer = (char *)malloc(1400 * sizeof(char));
-	 while(1){
-                i = 0;
-                c = fgetc(formatFile);
-                while (i < 1400){
-                        sentBuffer[i] = c;
-                        c = fgetc(formatFile);
-                        i++;
-                }
-		printf("%.*s", 1400, sentBuffer);
-                fseek(formatFile, -1, SEEK_CUR);
-		sleep(2);
-	}
-
-	
-
-	
-
+	return 0;
 }
 
+// get the length in bytes of the mp3 file
 long getFileLen(FILE *file){
 	fseek(file, 0, SEEK_END);
 	long fileLen = ftell(file);
@@ -62,18 +38,60 @@ long getFileLen(FILE *file){
 	return fileLen;			
 }
 
+// unpack the size of the id tag for extracting the mp3 data
 int unpackSizeTag(char *buffer){
 	int a, b, c, d;	
 
 	a = buffer[6] & 0x0000007f;
-	printf("a: %d\n", a);
 	b = buffer[7] & 0x0000007f;
-	printf("b: %d\n", b);
 	c = buffer[8] & 0x0000007f;
-	printf("c: %d\n", c);
 	d = buffer[9] & 0x0000007f;
 
 	return (a << 24) | (b << 14 ) | (c << 7) | (d);
-	
+}
 
+// extract the mp3 data from the tag, return the new size in bytes of the file
+long extractMp3(FILE *formatFile, FILE *file){
+	char *buffer;
+	int fileLen, tagSize;	
+
+	fileLen = getFileLen(file);
+
+        buffer = (char *)malloc(fileLen * sizeof(char));
+        fread(buffer, fileLen, 1, file);
+        fclose(file);
+
+        if(buffer[0] == 'I' && buffer[1] == 'D'){
+                tagSize = unpackSizeTag(buffer);
+                memmove(buffer, buffer + tagSize, fileLen - tagSize);
+                fwrite(buffer, 1, fileLen - tagSize, formatFile);
+                fclose(formatFile);
+        }
+
+	return (fileLen - tagSize);
+}
+
+// stream the file in packets of 1400 bytes and output to stdout
+void streamMedia(FILE *formatFile, long fileLen){
+	int i;
+	char c;
+	char *streamBuffer;
+	long curLen;
+
+	streamBuffer = (char *)malloc(1400 * sizeof(char));
+	curLen = ftell(formatFile);
+
+	while(curLen < fileLen){
+                i = 0;
+                c = fgetc(formatFile);
+                while (i < 1400){
+                        streamBuffer[i] = c;
+                        c = fgetc(formatFile);
+                        i++;
+                }
+                fseek(formatFile, -1, SEEK_CUR);
+		curLen = ftell(formatFile);
+                fwrite(streamBuffer, 1, 1400, stdout);
+                sleep(0.3);
+        }
 }
