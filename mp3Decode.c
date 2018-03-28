@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 long getFileLen(FILE *file);
 int unpackSizeTag(char *buffer);
@@ -8,11 +9,15 @@ int unpackSizeTag(char *buffer);
 int main(){
 
 	FILE *file;
+	FILE *formatFile;
 	char *buffer;
+	char *sentBuffer;
+	char c;
 	long fileLen;
-	int tagSize;
+	int tagSize, i;
 
 	file = fopen("Suspense_420819_010_The_Cave_of_Ali_Baba_-128-44-_27789_29m33s.mp3", "rb");
+	formatFile = fopen("formattedMp3.mp3", "wb");
 	fileLen = getFileLen(file);
 
 	buffer = (char *)malloc(fileLen * sizeof(char));
@@ -26,9 +31,26 @@ int main(){
 		for(int i = 0; i < 40; i++){
 			printf("%c", buffer[i]);
 		}	
+		fwrite(buffer, 1, fileLen - tagSize, formatFile);
 	}
 
+	sentBuffer = (char *)malloc(1400 * sizeof(char));
+	 while(1){
+                i = 0;
+                c = fgetc(formatFile);
+                while (i < 1400){
+                        sentBuffer[i] = c;
+                        c = fgetc(formatFile);
+                        i++;
+                }
+		printf("%.*s", 1400, sentBuffer);
+                fseek(formatFile, -1, SEEK_CUR);
+		sleep(2);
+	}
 
+	
+
+	
 
 }
 
