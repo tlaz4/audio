@@ -81,10 +81,10 @@ void streamMedia(FILE *formatFile, long fileLen){
 	long curLen;
 	FILE *stream;
 	
-	stream = popen("mpg123 -", "w");
-
 	streamBuffer = (char *)malloc(1400 * sizeof(char));
 	curLen = ftell(formatFile);
+
+	stream = popen("mpg123 -", "w");	
 
 	while(curLen < fileLen){
                 i = 0;
