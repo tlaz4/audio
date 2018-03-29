@@ -1,3 +1,5 @@
+#define _BSD_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +11,7 @@ long extractMp3(FILE *formatFile, FILE *file);
 void streamMedia(FILE *formatFile, long fileLen);
 
 /*
-	run as ./mp3Decode | mpg123 -
+	program to stream mp3 audio, tcp server not implemented yet
 */
 
 int main(int argc, char* argv[]){
@@ -77,6 +79,9 @@ void streamMedia(FILE *formatFile, long fileLen){
 	char c;
 	char *streamBuffer;
 	long curLen;
+	FILE *stream;
+	
+	stream = popen("mpg123 -", "w");
 
 	streamBuffer = (char *)malloc(1400 * sizeof(char));
 	curLen = ftell(formatFile);
@@ -91,7 +96,7 @@ void streamMedia(FILE *formatFile, long fileLen){
                 }
                 fseek(formatFile, -1, SEEK_CUR);
 		curLen = ftell(formatFile);
-                fwrite(streamBuffer, 1, 1400, stdout);
+                fwrite(streamBuffer, 1, 1400, stream);
                 sleep(0.3);
         }
 }
