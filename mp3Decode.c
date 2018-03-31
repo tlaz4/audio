@@ -9,6 +9,7 @@ long getFileLen(FILE *file);
 int unpackSizeTag(char *buffer);
 long extractMp3(FILE *formatFile, FILE *file);
 void streamMedia(FILE *formatFile, long fileLen);
+void parseSchedule(char *str[4]);
 
 /*
 	program to stream mp3 audio, tcp server not implemented yet
@@ -19,14 +20,25 @@ int main(int argc, char* argv[]){
 	FILE *file;
 	FILE *formatFile;
 	long fileLen;
+	char *str[4];
 
-	file = fopen(argv[1], "rb");
-	formatFile = fopen("formattedMp3.mp3", "wb");
+	// allocate room for 4 100 byte strings for file titles
+	for(int i = 0; i < 4; i++){
+        	str[i] = malloc(sizeof(char) * 100);
+        }
 
-	fileLen = extractMp3(formatFile, file);
+	// create a string of file names to be opened throughout program
+	parseSchedule(str);
 
-	formatFile = fopen("formattedMp3.mp3", "rb");
-	streamMedia(formatFile, fileLen);
+	for(int i = 0; i < 4; i++){
+		file = fopen(str[i], "rb");
+		formatFile = fopen("formattedMp3.mp3", "wb");
+
+		fileLen = extractMp3(formatFile, file);
+
+		formatFile = fopen("formattedMp3.mp3", "rb");
+		streamMedia(formatFile, fileLen);
+	}
 
 	return 0;
 }
@@ -97,5 +109,23 @@ void streamMedia(FILE *formatFile, long fileLen){
                 sleep(0.3);
         }
 	printf("done");
+}
 
+// parse schedule.txt to get todays n show playlist
+void parseSchedule(char *str[4]){
+	 FILE * schedule, *show;
+
+	schedule = fopen("schedule.txt", "r");
+
+        for(int i = 0; i < 4; i++){
+                fgets(str[i], 100, schedule);
+
+                char* nl = strchr(str[i], '\n');
+                if (nl != NULL){
+                        *nl = '\0';
+                }
+
+                printf("Show is: %s\n", str[i]);
+        }
+        fclose(schedule);
 }
