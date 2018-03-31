@@ -68,7 +68,7 @@ long extractMp3(FILE *formatFile, FILE *file){
                 memmove(buffer, buffer + tagSize, fileLen - tagSize);
                 fwrite(buffer, 1, fileLen - tagSize, formatFile);
                 fclose(formatFile);
-        }
+   	}
 
 	return (fileLen - tagSize);
 }
@@ -78,15 +78,13 @@ void streamMedia(FILE *formatFile, long fileLen){
 	int i;
 	char c;
 	char *streamBuffer;
-	long curLen;
 	FILE *stream;
 	
 	streamBuffer = (char *)malloc(1400 * sizeof(char));
-	curLen = ftell(formatFile);
 
 	stream = popen("mpg123 -", "w");	
 
-	while(curLen < fileLen){
+	while((ftell(formatFile) + 1) < fileLen){
                 i = 0;
                 c = fgetc(formatFile);
                 while (i < 1400){
@@ -95,8 +93,9 @@ void streamMedia(FILE *formatFile, long fileLen){
                         i++;
                 }
                 fseek(formatFile, -1, SEEK_CUR);
-		curLen = ftell(formatFile);
                 fwrite(streamBuffer, 1, 1400, stream);
                 sleep(0.3);
         }
+	printf("done");
+
 }
