@@ -37,6 +37,7 @@ int main(int argc, char* argv[]){
 		fileLen = extractMp3(formatFile, file);
 
 		formatFile = fopen("formattedMp3.mp3", "rb");
+		sleep(5);
 		streamMedia(formatFile, fileLen);
 	}
 
